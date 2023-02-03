@@ -12,7 +12,7 @@ from loguru import logger
 from plexapi.audio import Track
 from plexapi.media import Media
 from plexapi.myplex import MyPlexAccount, MyPlexResource, PlexServer
-from plexapi.video import Episode, Movie
+from plexapi.video import Episode, Movie, EpisodeSession, MovieSession
 from pypresence import Presence
 
 
@@ -37,21 +37,25 @@ class Perplex:
         discord: Presence = Perplex.LoginDiscord(self)
 
         while True:
-            session: Optional[Union[Movie, Episode, Track]] = Perplex.FetchSession(
+            session: Optional[Union[MovieSession, EpisodeSession, Track]] = Perplex.FetchSession(
                 self, plex
             )
 
             if session is not None:
                 logger.success(f"Fetched active media session")
 
-                if type(session) is Movie:
-                    status: Dict[str, Any] = Perplex.BuildMoviePresence(self, session)
-                elif type(session) is Episode:
-                    status: Dict[str, Any] = Perplex.BuildEpisodePresence(self, session)
+                if type(session) is MovieSession:
+                    status: Dict[str, Any] = Perplex.BuildMoviePresence(
+                        self, session)
+                elif type(session) is EpisodeSession:
+                    status: Dict[str, Any] = Perplex.BuildEpisodePresence(
+                        self, session)
                 elif type(session) is Track:
-                    status: Dict[str, Any] = Perplex.BuildTrackPresence(self, session)
+                    status: Dict[str, Any] = Perplex.BuildTrackPresence(
+                        self, session)
 
-                success: Optional[bool] = Perplex.SetPresence(self, discord, status)
+                success: Optional[bool] = Perplex.SetPresence(
+                    self, discord, status)
 
                 # Reestablish a failed Discord Rich Presence connection
                 if success is False:
@@ -114,7 +118,8 @@ class Perplex:
 
                 account = MyPlexAccount(token=auth)
             except Exception as e:
-                logger.error(f"Failed to authenticate with Plex using token, {e}")
+                logger.error(
+                    f"Failed to authenticate with Plex using token, {e}")
 
         if account is None:
             username: str = settings["username"]
@@ -160,7 +165,8 @@ class Perplex:
                 client = Presence(self.config["discord"]["appId"])
                 client.connect()
             except Exception as e:
-                logger.error(f"Failed to connect to Discord ({e}) retry in 15s...")
+                logger.error(
+                    f"Failed to connect to Discord ({e}) retry in 15s...")
 
                 sleep(15.0)
 
@@ -229,10 +235,15 @@ class Perplex:
             return active
         elif type(active) is Episode:
             return active
+        elif type(active) is EpisodeSession:
+            return active
+        elif type(active) is MovieSession:
+            return active
         elif type(active) is Track:
             return active
 
-        logger.error(f"Fetched active media session of unknown type: {type(active)}")
+        logger.error(
+            f"Fetched active media session of unknown type: {type(active)}")
 
     def BuildMoviePresence(self: Any, active: Movie) -> Dict[str, Any]:
         """Build a Discord Rich Presence status for the active movie session."""
@@ -276,7 +287,8 @@ class Perplex:
                 {"label": "TMDB", "url": f"https://themoviedb.org/{mType}/{mId}"}
             ]
 
-        result["remaining"] = int((active.duration / 1000) - (active.viewOffset / 1000))
+        result["remaining"] = int(
+            (active.duration / 1000) - (active.viewOffset / 1000))
         result["imageText"] = active.title
 
         logger.trace(result)
@@ -294,7 +306,8 @@ class Perplex:
 
         result["primary"] = active.show().title
         result["secondary"] = active.title
-        result["remaining"] = int((active.duration / 1000) - (active.viewOffset / 1000))
+        result["remaining"] = int(
+            (active.duration / 1000) - (active.viewOffset / 1000))
         result["imageText"] = active.show().title
 
         if (active.seasonNumber is not None) and (active.episodeNumber is not None):
@@ -326,7 +339,8 @@ class Perplex:
 
         result["primary"] = active.titleSort
         result["secondary"] = f"by {active.artist().title}"
-        result["remaining"] = int((active.duration / 1000) - (active.viewOffset / 1000))
+        result["remaining"] = int(
+            (active.duration / 1000) - (active.viewOffset / 1000))
         result["imageText"] = active.parentTitle
 
         # Default to image uploaded via Discord Developer Portal
@@ -346,7 +360,8 @@ class Perplex:
         key: str = settings["apiKey"]
 
         if settings["enable"] is not True:
-            logger.warning(f"TMDB disabled, some features will not be available")
+            logger.warning(
+                f"TMDB disabled, some features will not be available")
 
             return
 
@@ -392,9 +407,9 @@ class Perplex:
 
         title: str = data["primary"]
 
-        data["buttons"].append(
-            {"label": "Get Perplex", "url": "https://github.com/EthanC/Perplex"}
-        )
+        # data["buttons"].append(
+        #     {"label": "owo", "url": "https://cudd.io"}
+        # )
 
         try:
             client.update(
@@ -408,7 +423,8 @@ class Perplex:
                 buttons=data["buttons"],
             )
         except Exception as e:
-            logger.error(f"Failed to set Discord Rich Presence to {title}, {e}")
+            logger.error(
+                f"Failed to set Discord Rich Presence to {title}, {e}")
 
             return False
 
