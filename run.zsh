@@ -1,5 +1,5 @@
 # Activate virtual environment
-.venv/scripts/activate.ps1
+# .venv/scripts/activate.ps1
 
 # Run Python script
 python perplex.py
